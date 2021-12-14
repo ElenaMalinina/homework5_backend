@@ -1,4 +1,4 @@
-package malinina.Utils;
+package malinina.utils;
 
 import lombok.experimental.UtilityClass;
 import okhttp3.OkHttpClient;
