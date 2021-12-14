@@ -2,7 +2,11 @@ package malinina;
 
 import com.github.javafaker.Faker;
 import lombok.extern.slf4j.Slf4j;
-import malinina.Utils.RetrofitUtils;
+import malinina.dao.CategoriesMapper;
+import malinina.dao.ProductsMapper;
+import malinina.model.Products;
+import malinina.utils.DbUtils;
+import malinina.utils.RetrofitUtils;
 import malinina.dto.Category;
 import malinina.dto.Product;
 import malinina.enums.CategoryType;
@@ -29,6 +33,9 @@ public class ProductTests {
     static Retrofit client;
     static ProductService productService;
     static CategoryService categoryService;
+
+    static ProductsMapper productsMapper;
+    static CategoriesMapper categoriesMapper;
     Faker faker = new Faker();
     Product product;
 
@@ -37,6 +44,8 @@ public class ProductTests {
         client = RetrofitUtils.getRetrofit();
         productService = client.create(ProductService.class);
         categoryService = client.create(CategoryService.class);
+        productsMapper = DbUtils.getProductsMapper();
+        categoriesMapper = DbUtils.getCategoriesMapper();
     }
     @BeforeEach
     void setUp() throws IOException {
@@ -61,14 +70,21 @@ public class ProductTests {
         assertThat(response.body().getTitle(), equalTo(product.getTitle()));
         assertThat(response.body().getPrice(), equalTo(product.getPrice()));
         assertThat(response.body().getCategoryTitle(), equalTo(product.getCategoryTitle()));
+        Products product = productsMapper.selectByPrimaryKey(productId.longValue());
+        assertThat(response.body().getTitle(), equalTo(product.getTitle()));
+        assertThat(response.body().getPrice(), equalTo(product.getPrice()));
     }
     @Test
     void postProductTest() throws IOException {
+        Integer countProductBefore = DbUtils.countProducts(productsMapper);
         Response<Product> response = productService.createProduct(product).execute();
-        log.info(Objects.requireNonNull(response.body()).toString());
+        Integer countProductAfter = DbUtils.countProducts(productsMapper);
+
+        assertThat(countProductAfter, equalTo(countProductBefore+1));
         assertThat(response.body().getTitle(), equalTo(product.getTitle()));
         assertThat(response.body().getPrice(), equalTo(product.getPrice()));
         assertThat(response.body().getCategoryTitle(), equalTo(product.getCategoryTitle()));
+        productId = response.body().getId();
     }
     @Test
     void getCategoryByIDTest() throws IOException {
